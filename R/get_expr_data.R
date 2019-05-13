@@ -130,27 +130,27 @@ get_gene_names <- function(ids, column = 'SYMBOL', keytype=c("ENSEMBL", "ENTREZI
 
 #' Summarise expression data as DGEList object
 #' @export
-get_expr_data <- function(using = c('DESeq2', 'edgeR'), sample_data = NULL) {
+get_expr_data <- function(using = c('DESeq2', 'edgeR'), sample_data = NULL, design = NULL) {
   # clean up arg inputs
   using <- match.arg(using)
   # get featurecount data
   fc <- load_data_from_feature_counts()
   # create result object
   if (using == 'DESeq2') {
-    create_deseq2_result(fc = fc, sample_data = sample_data)
+    create_deseq2_result(fc = fc, sample_data = sample_data, design = design)
   } else {
-    create_edger_result(fc = fc, sample_data = sample_data)
+    create_edger_result(fc = fc, sample_data = sample_data) # design ignored
   }
 }
 
 #' summarize expr data as DESeqDataSet
 #' importFrom DESeq2 DESeqDataSetFromMatrix
 #' @export
-create_deseq2_result <- function(fc, sample_data) {
+create_deseq2_result <- function(fc, sample_data, design = ~ cond) {
   # create DeSeq2 object
   dds <- DESeq2::DESeqDataSetFromMatrix(countData = fc$counts,
                                         colData = sample_data,
-                                        design = ~ cond)
+                                        design = design)
   dds
 }
 

@@ -37,6 +37,6 @@ longest_common_substring <- function(a) {
   
   # keep the longest of all substrings present in all original strings (a+/b)
   all_substrings %>%
-    purrr::keep(~ all(stringr::str_detect(unique(c(a, b)), pattern = .))) %>%
+    purrr::keep(~ all(stringr::str_detect(unique(a), pattern = .))) %>%
     longest_string(.)
 }
