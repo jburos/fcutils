@@ -1,0 +1,17 @@
+Package: fcutils
+Title: Working with FeatureCounts: Utilities for RNASeq Expression Analysis
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Jacqueline",
+           family = "Buros",
+           role = c("aut", "cre"),
+           email = "jackinovik@gmail.com",
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+Description: Import, summarise, and annotate featureCounts output into edgeR or DESeq2 objects.
+License: GPLv3
+Encoding: UTF-8
+LazyData: true
+Suggests: 
+    testthat
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 6.1.1
