@@ -13,5 +13,8 @@ Encoding: UTF-8
 LazyData: true
 Suggests: 
     testthat
+Depends:
+    settings,
+    tidyverse
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 6.1.1
