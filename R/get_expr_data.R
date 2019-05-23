@@ -9,12 +9,15 @@
 #' @import tidyverse
 #' @export
 get_featurecounts_files <- function(featurecounts_dir, pattern = NULL, expect_length = NULL, sample_name_from_filename = basename) {
-  feature_counts <- dir(featurecounts_dir, full.names = T, include.dirs = T, recursive = T) %>%
-    purrr::set_names(clean_file_names(sample_name_from_filename(.))) %>%
-    unlist()
+  feature_counts <- dir(featurecounts_dir, full.names = T, include.dirs = T, recursive = T) %>% unlist()
   if (!is.null(pattern))
     feature_counts <- 
-      purrr::map(feature_counts, ~ purrr::keep(., stringr::str_detect, pattern = pattern))
+      purrr::map(feature_counts, ~ purrr::keep(., stringr::str_detect, pattern = pattern)) %>%
+      purrr::compact() %>% 
+      unlist()
+  if (!is.null(sample_name_from_filename))
+    feature_counts <- feature_counts %>% 
+      purrr::set_names(clean_file_names(sample_name_from_filename(.)))
   if (!is.null(expect_length))
     assertthat::assert_that(length(feature_counts) == expect_length,
                             msg = glue::glue('Incorrect number of featurecount files identified (expected {expect_length}).'))
