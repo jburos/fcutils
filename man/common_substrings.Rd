@@ -3,7 +3,7 @@
 \name{common_substrings}
 \alias{common_substrings}
 \title{Find all common substrings of two strings
-Borrows from https://stackoverflow.com/questions/28261825/longest-common-substring-in-r-finding-non-contiguous-matches-between-the-two-str}
+Based on https://stackoverflow.com/questions/28261825/longest-common-substring-in-r-finding-non-contiguous-matches-between-the-two-str}
 \usage{
 common_substrings(a, b)
 }
@@ -14,5 +14,5 @@ common_substrings(a, b)
 }
 \description{
 Find all common substrings of two strings
-Borrows from https://stackoverflow.com/questions/28261825/longest-common-substring-in-r-finding-non-contiguous-matches-between-the-two-str
+Based on https://stackoverflow.com/questions/28261825/longest-common-substring-in-r-finding-non-contiguous-matches-between-the-two-str
 }

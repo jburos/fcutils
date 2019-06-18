@@ -5,7 +5,7 @@
 \title{summarize expr data as DESeqDataSet
 importFrom DESeq2 DESeqDataSetFromMatrix}
 \usage{
-create_deseq2_result(fc, sample_data)
+create_deseq2_result(fc, sample_data, design = ~cond)
 }
 \description{
 summarize expr data as DESeqDataSet

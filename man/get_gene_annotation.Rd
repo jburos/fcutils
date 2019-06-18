@@ -4,7 +4,8 @@
 \alias{get_gene_annotation}
 \title{return gene annotation from ensembl ids}
 \usage{
-get_gene_annotation(ensembl_ids)
+get_gene_annotation(ensembl_ids, attributes = c("ensembl_gene_id",
+  "gene_biotype", "external_gene_name", "entrez_gene_id"))
 }
 \description{
 return gene annotation from ensembl ids

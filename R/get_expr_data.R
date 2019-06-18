@@ -79,7 +79,7 @@ filter_feature_counts <- function(featurecounts) {
 #' return gene annotation from ensembl ids
 #' @export
 #' @import biomaRt
-get_gene_annotation <- function(ensembl_ids) {
+get_gene_annotation <- function(ensembl_ids, attributes = c('ensembl_gene_id', 'gene_biotype', 'external_gene_name', 'entrezgene')) {
   require("biomaRt")
   mart <- biomaRt::useMart("ENSEMBL_MART_ENSEMBL")
   mart <- biomaRt::useDataset("hsapiens_gene_ensembl", mart)
@@ -91,7 +91,7 @@ get_gene_annotation <- function(ensembl_ids) {
   # get annotation info
   annot <- biomaRt::getBM(
     mart=mart,
-    attributes=c("ensembl_gene_id", "gene_biotype", "external_gene_name"),
+    attributes=attributes,
     filter="ensembl_gene_id",
     values=ensLookup,
     uniqueRows=TRUE)

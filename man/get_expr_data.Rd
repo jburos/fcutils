@@ -4,7 +4,8 @@
 \alias{get_expr_data}
 \title{Summarise expression data as DGEList object}
 \usage{
-get_expr_data(using = c("DESeq2", "edgeR"), sample_data = NULL)
+get_expr_data(using = c("DESeq2", "edgeR"), sample_data = NULL,
+  design = NULL)
 }
 \description{
 Summarise expression data as DGEList object
