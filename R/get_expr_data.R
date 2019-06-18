@@ -79,11 +79,14 @@ filter_feature_counts <- function(featurecounts) {
 #' return gene annotation from ensembl ids
 #' @export
 #' @import biomaRt
-get_gene_annotation <- function(ensembl_ids, attributes = c('ensembl_gene_id', 'gene_biotype', 'external_gene_name', 'entrezgene')) {
+get_gene_annotation <- function(ensembl_ids, attributes = c('ensembl_gene_id', 'gene_biotype', 'external_gene_name'), extra_attributes = c(), host = fcutils_options()$ensembl_host) {
   require("biomaRt")
-  mart <- biomaRt::useMart("ENSEMBL_MART_ENSEMBL")
+  mart <- biomaRt::useMart("ENSEMBL_MART_ENSEMBL", host = host)
   mart <- biomaRt::useDataset("hsapiens_gene_ensembl", mart)
   
+  if (length(extra_attributes) > 0)
+    attributes <- unique(c(attributes, extra_attributes))
+
   # remove suffixes from lookup ids
   ens <- ensembl_ids
   ensLookup <- gsub("\\.[0-9]*$", "", ens)
@@ -116,10 +119,10 @@ get_gene_annotation <- function(ensembl_ids, attributes = c('ensembl_gene_id', '
 #' @export
 #' @importFrom AnnotationDbi mapIds
 #' @import org.Hs.eg.db 
-get_gene_names <- function(ids, column = 'SYMBOL', keytype=c("ENSEMBL", "ENTREZID"), ...) {
+get_gene_names <- function(ids, column = 'SYMBOL', keytype=c("ENSEMBL", "ENTREZID"), host = fcutils_options()$ensembl_host, ...) {
   keytype <- match.arg(keytype)
   if (keytype == 'ENSEMBL') {
-    annot <- get_gene_annotation(ensembl_ids = ids)
+    annot <- get_gene_annotation(ensembl_ids = ids, host = host)
     annot <- as.data.frame(annot)
     rownames(annot) <- annot$original_id
     return(annot[ids, 'external_gene_name'])

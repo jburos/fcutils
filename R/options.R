@@ -1,6 +1,6 @@
 # Variable, global to package's namespace. 
 # This function is not exported to user space and does not need to be documented.
-MYPKGOPTIONS <- settings::options_manager(cache_dir = '.Rcache')
+MYPKGOPTIONS <- settings::options_manager(cache_dir = '.Rcache', ensembl_host = 'useast.ensembl.org')
 
 # User function that gets exported:
 

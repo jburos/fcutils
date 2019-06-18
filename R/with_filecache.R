@@ -1,4 +1,3 @@
-CACHE_DIR <- '.Rcache'
 #' Execute an expression, while saving result to a local file
 #' @param expr R expression whose result should be cached
 #' @param filename A unique name for cached item
