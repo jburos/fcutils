@@ -5,7 +5,8 @@
 \title{return gene annotation from ensembl ids}
 \usage{
 get_gene_annotation(ensembl_ids, attributes = c("ensembl_gene_id",
-  "gene_biotype", "external_gene_name", "entrez_gene_id"))
+  "gene_biotype", "external_gene_name", "entrezgene_id", "hgnc_symbol"),
+  extra_attributes = c(), host = fcutils_options()$ensembl_host)
 }
 \description{
 return gene annotation from ensembl ids

@@ -76,42 +76,54 @@ filter_feature_counts <- function(featurecounts) {
   featurecounts
 }
 
-#' return gene annotation from ensembl ids
+#' return gene annotation from ensembl (or other gene) ids
 #' @export
 #' @import biomaRt
-get_gene_annotation <- function(ensembl_ids, attributes = c('ensembl_gene_id', 'gene_biotype', 'external_gene_name'), extra_attributes = c(), host = fcutils_options()$ensembl_host) {
+get_gene_annotation <- function(lookup_ids, 
+                                filter = "ensembl_gene_id",
+                                attributes = c('gene_biotype', 'external_gene_name', 'entrezgene_id', 'hgnc_symbol', 'entrezgene_description', 'entrezgene_accession'),
+                                extra_attributes = c(),
+                                host = fcutils_options()$ensembl_host) {
   require("biomaRt")
   mart <- biomaRt::useMart("ENSEMBL_MART_ENSEMBL", host = host)
   mart <- biomaRt::useDataset("hsapiens_gene_ensembl", mart)
   
   if (length(extra_attributes) > 0)
     attributes <- unique(c(attributes, extra_attributes))
+  attributes <- unique(c(attributes, filter))
 
   # remove suffixes from lookup ids
-  ens <- ensembl_ids
-  ensLookup <- gsub("\\.[0-9]*$", "", ens)
+  if (filter == 'ensembl_gene_id') {
+    # extract numeric identifier from EN* string
+    lookup_ids <- gsub("\\.[0-9]*$", "", lookup_ids)
+  }
   
   # get annotation info
   annot <- biomaRt::getBM(
     mart=mart,
     attributes=attributes,
-    filter="ensembl_gene_id",
-    values=ensLookup,
+    filter=filter,
+    values=lookup_ids,
     uniqueRows=TRUE)
   
   # add rows for ensembl ids that failed lookup
-  missing_results <- ensLookup[!ensLookup %in% annot$ensembl_gene_id]
-  dummy_annot <- tbl_df(list(ensembl_gene_id = missing_results))
-  annot <- bind_rows(annot, dummy_annot)
-
-  # add original_id back in as search item (in case modified by gsub, above)
-  annot <- data.frame(
-    ens[match(annot$ensembl_gene_id, ensLookup)],
-    annot, stringsAsFactors = F)
-  colnames(annot)[1] <- "original_id"
+  missing_results <- lookup_ids[!lookup_ids %in% annot[[filter]]]
+  if (length(missing_results) > 0) {
+    futile.logger::flog.warn(glue::glue('{length(missing_results)} ids not found in biomaRt. Dummy records (with all NA values) will be added to the annotation df.'))
+    dummy_annot <- tbl_df(list(id = missing_results))
+    names(dummy_annot) <- filter
+    annot <- bind_rows(annot, dummy_annot)
+  }
   
-  # re-order annot to match original order of ensembl_ids
-  annot <- annot[match(annot$ensembl_gene_id, ensembl_ids),]
+  # add original_id back in as search item (in case modified by gsub, above)
+  annot <- annot %>%
+    dplyr::mutate(original_id = !!rlang::sym(filter)) %>%
+    as.data.frame()
+  # check for duplicates
+  if ((n_dups <- annot %>% dplyr::add_count(original_id) %>% filter(n>1) %>% distinct(original_id) %>% nrow()) > 1) {
+    futile.logger::flog.warn(glue::glue('{n_dups} records with duplicates by {filter} in annotation results. These will be kept.'))
+  }
+
   annot
 }
 
@@ -122,7 +134,7 @@ get_gene_annotation <- function(ensembl_ids, attributes = c('ensembl_gene_id', '
 get_gene_names <- function(ids, column = 'SYMBOL', keytype=c("ENSEMBL", "ENTREZID"), host = fcutils_options()$ensembl_host, ...) {
   keytype <- match.arg(keytype)
   if (keytype == 'ENSEMBL') {
-    annot <- get_gene_annotation(ensembl_ids = ids, host = host)
+    annot <- get_gene_annotation(lookup_ids = ids, filter = 'ensembl_gene_id', host = host)
     annot <- as.data.frame(annot)
     rownames(annot) <- annot$original_id
     return(annot[ids, 'external_gene_name'])
@@ -169,4 +181,46 @@ create_edger_result <- function(fc, sample_data) {
                   samples = sample_data,
                   genes = fc$annotation)
   dgel
+}
+
+#' Given featurecounts matrix & annotation, roll
+#' results up to the entrez gene id, combining 
+#' ensembl records mapping to the same gene
+#' @param counts counts matrix with rows per gene (named) & columns per sample (named)
+#' @param annotation_df annotation df containing at least the original & gene ids
+#' @param original_id character field name in the annotation df corresponding to row names in fc$counts matrix
+#' @param gene_id character field name in the annotation df corresponding to the levels at which we want counts aggregated
+#' @return fc object with updated counts matrix & annotation df filtered to distinct gene_ids
+#' @export
+convert_ensembl2entrez <- function(counts, annotation_df, original_id = 'original_id', gene_id = 'gene_id') {
+  if (missing(annotation_df)) {
+    annotation_df <- get_gene_annotation(rownames(counts))
+    original_id <- 'original_id'
+    gene_id <- 'hgnc_symbol'
+    if (length(not_found <- rownames(counts)[!rownames(counts) %in% annotation_df[[original_id]]])>0) {
+      futile.logger::flog.warn(glue::glue('{length(not_found)} gene ids could not be located in biomaRt: {glue::glue_collapse(head(not_found, n = 10), sep = ", ")}'))
+    }
+  }
+  if (any(is.na(annotation_df[[original_id]])) || any(is.na(annotation_df[[gene_id]]))) {
+    annotation_df_new <- annotation_df %>%
+      dplyr::select(one_of(original_id, gene_id)) %>%
+      na.omit()
+    futile.logger::flog.info(glue::glue('Dropping records with missing {original_id} or {gene_id}; {nrow(annotation_df_new)}/{nrow(annotation_df)} remaining.'))
+    annotation_df <- annotation_df_new
+  }
+  new_genes <- unique(annotation_df[[gene_id]])
+  new_counts <- matrix(NA_integer_,
+                       nrow = length(new_genes), ncol = ncol(counts),
+                       dimnames = list(gene = new_genes,
+                                       sample = colnames(counts)))
+  for (gene in new_genes) {
+    ensembl_ids <- annotation_df[annotation_df[[gene_id]] == gene, original_id]
+    if (length(ensembl_ids) == 1) {
+      new_counts[gene,] <- counts[ensembl_ids,]
+    } else {
+      subset <- counts[ensembl_ids,]
+      new_counts[gene,] <- colSums(subset, na.rm = T)
+    }
+  }
+  new_counts
 }

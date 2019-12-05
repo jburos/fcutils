@@ -5,7 +5,7 @@
 \title{get gene names from entrez or ensembl ids}
 \usage{
 get_gene_names(ids, column = "SYMBOL", keytype = c("ENSEMBL",
-  "ENTREZID"), ...)
+  "ENTREZID"), host = fcutils_options()$ensembl_host, ...)
 }
 \description{
 get gene names from entrez or ensembl ids

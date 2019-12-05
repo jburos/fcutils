@@ -2,6 +2,7 @@
 
 export(clean_file_names)
 export(color_from_middle)
+export(convert_ensembl2entrez)
 export(create_deseq2_result)
 export(create_edger_result)
 export(fcutils_options)
